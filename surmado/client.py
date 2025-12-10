@@ -9,7 +9,7 @@ import time
 import requests
 from typing import Dict, Optional, Any, List
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 class SurmadoError(Exception):
@@ -41,15 +41,20 @@ class ValidationError(SurmadoError):
     pass
 
 
+class RateLimitError(SurmadoError):
+    """Raised when rate limit is exceeded (429)."""
+    pass
+
+
 class Surmado:
     """
     Official Surmado API client.
     
     Args:
-        api_key: Your Surmado API key (starts with sur_live_ or sur_test_).
-                 If not provided, reads from SURMADO_API_KEY env var.
-        base_url: API base URL. Defaults to https://api.surmado.com/v1
-        timeout: Request timeout in seconds. Defaults to 30.
+        api_key (str): Your Surmado API key  (starts with sur_live_ or sur_test_).
+                    If not provided, reads from SURMADO_API_KEY environment variable. Must be a string.
+        base_url (str): API base URL. Defaults to https://api.surmado.com/v1.
+        timeout (int): Request timeout in seconds. Defaults to 30.
     
     Example:
         >>> from surmado import Surmado
@@ -146,7 +151,7 @@ class Surmado:
             >>> print(f"Token (save for Solutions): {result['token']}")
         """
         payload = {
-            "url": url,
+            "url": self._normalize_url(url),
             "brand_name": brand_name,
             "email": email,
             "industry": industry,
@@ -198,7 +203,7 @@ class Surmado:
             >>> print(f"Report ID: {result['report_id']}")
         """
         payload = {
-            "url": url,
+            "url": self._normalize_url(url),
             "brand_name": brand_name,
             "email": email,
             "tier": tier,
@@ -498,6 +503,12 @@ class Surmado:
     # =========================================================================
     # Internal HTTP Methods
     # =========================================================================
+    
+    def _normalize_url(self, url: str) -> str:
+        """Add https:// if no protocol specified."""
+        if url and not url.startswith(('http://', 'https://')):
+            return f"https://{url}"
+        return url
     
     def _headers(self) -> Dict[str, str]:
         """Build request headers."""

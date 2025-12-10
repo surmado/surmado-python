@@ -1,8 +1,11 @@
-# Surmado Python Client
+# Surmado Python SDK
 
-Official Python SDK for [Surmado](https://surmado.com) — the anti-dashboard marketing intelligence engine.
+[![PyPI version](https://img.shields.io/pypi/v/surmado.svg)](https://pypi.org/project/surmado/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-**SEO audits, AI visibility testing, and strategic advisory. Reports cost $25–$50. No subscriptions. No dashboards.**
+Official Python client for Surmado's AI visibility testing and SEO reports.
+
+One-time reports. No subscriptions. API-first.
 
 ## Installation
 
@@ -15,8 +18,7 @@ pip install surmado
 ```python
 from surmado import Surmado
 
-# Initialize (or set SURMADO_API_KEY env var)
-client = Surmado(api_key="sur_live_...")
+client = Surmado()  # uses SURMADO_API_KEY env var
 
 # Run an AI Visibility Test
 report = client.signal(
@@ -32,14 +34,14 @@ report = client.signal(
 )
 
 print(f"Report queued: {report['report_id']}")
-print(f"Token (save for Solutions): {report['token']}")
 
 # Wait for completion (or use webhooks)
 completed = client.wait_for_report(report["report_id"])
 print(f"PDF ready: {completed['download_url']}")
+print("(Save for Surmado Solutions) Report Token: ", completed['token'])
 ```
 
-## Features
+## Products
 
 ### Signal — AI Visibility Testing
 
@@ -94,12 +96,12 @@ solutions_result = client.solutions(
 ```python
 result = client.solutions(
     email="you@acme.com",
-    brand_name="Acme Corp",                                           # max 100 chars
-    business_story="We're a B2B SaaS company in project management...", # max 2000 chars
-    decision="Should we expand to enterprise market?",                # max 1500 chars
-    success="$10M ARR in 18 months",                                  # max 1000 chars
-    timeline="Q2 2025",                                               # max 200 chars
-    scale_indicator="$2M ARR, 20 employees"                           # max 100 chars
+    brand_name="Acme Corp",
+    business_story="We're a B2B SaaS company in project management...",
+    decision="Should we expand to enterprise market?",
+    success="$10M ARR in 18 months",
+    timeline="Q2 2025",
+    scale_indicator="$2M ARR, 20 employees"
 )
 ```
 
@@ -117,26 +119,20 @@ result = client.solutions(
 )
 ```
 
-## Rerun Methods (Automation-Friendly)
+## Rerun Methods
 
-Once you've set up a brand with personas in the Surmado dashboard, you can run reports with minimal code:
-
-### Signal Rerun
+Once you've set up a brand with personas in the Surmado dashboard, run reports with minimal code:
 
 ```python
-# Just 4 fields instead of 10+
+# Signal: 4 fields instead of 10+
 result = client.signal_rerun(
     brand_slug="acme_corp",
     persona_slug="cto-enterprise",
     email="you@acme.com",
     tier="basic"
 )
-```
 
-### Scan Rerun
-
-```python
-# Just 3 fields
+# Scan: 3 fields
 result = client.scan_rerun(
     brand_slug="acme_corp",
     email="you@acme.com",
@@ -144,31 +140,95 @@ result = client.scan_rerun(
 )
 ```
 
-Perfect for:
-- **Zapier/Make/n8n workflows** — set up brand once, automate reports
-- **Scheduled monitoring** — weekly SEO scans or monthly AI visibility checks
-- **Dashboard "Run Again"** — one-click report refresh
+Perfect for Zapier/Make/n8n workflows, scheduled monitoring, and dashboard integrations.
 
-## Async Reports
+## Async Reports & Polling
 
-All reports are processed asynchronously (~15 minutes). Two ways to get results:
+All reports process asynchronously (~15 minutes). Two ways to get results:
 
-### Option 1: Polling
+### Polling
 
 ```python
 report = client.signal(...)
+
+# Block until complete (default 20 min timeout)
 completed = client.wait_for_report(report["report_id"], timeout_minutes=20)
 print(completed["download_url"])
 ```
 
-### Option 2: Webhooks
+### Webhooks
 
 ```python
 report = client.signal(
     ...,
     webhook_url="https://your-server.com/webhook"
 )
-# Your webhook receives POST when report completes
+# Your webhook receives POST with full report data when complete
+```
+
+## Handling Errors
+
+When the API returns a non-success status code, a typed exception is raised:
+
+```python
+from surmado import (
+    Surmado,
+    AuthenticationError,
+    InsufficientCreditsError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    SurmadoError
+)
+
+client = Surmado()
+
+try:
+    result = client.signal(...)
+except AuthenticationError:
+    print("Invalid or missing API key")
+except InsufficientCreditsError as e:
+    print(f"Not enough credits: {e.response}")
+except RateLimitError:
+    print("Too many requests — back off and retry")
+except NotFoundError:
+    print("Brand or report not found")
+except ValidationError as e:
+    print(f"Invalid request params: {e}")
+except SurmadoError as e:
+    print(f"API error: {e.status_code} - {e}")
+```
+
+### Error Status Mapping
+
+| Status Code | Exception |
+|-------------|-----------|
+| 400 | `ValidationError` |
+| 401 | `AuthenticationError` |
+| 402 | `InsufficientCreditsError` |
+| 404 | `NotFoundError` |
+| 429 | `RateLimitError` |
+| ≥500 | `SurmadoError` |
+
+All exceptions inherit from `SurmadoError` and include `status_code` and `response` attributes.
+
+## Timeouts
+
+Default request timeout is 30 seconds. Configure per-client or per-request:
+
+```python
+# Client-level default
+client = Surmado(api_key="...", timeout=60)
+
+# Per-request override
+result = client.signal(..., timeout=45)
+```
+
+For `wait_for_report`, the polling timeout is separate:
+
+```python
+# Wait up to 30 minutes for long reports
+completed = client.wait_for_report(report_id, timeout_minutes=30)
 ```
 
 ## Response Format
@@ -178,7 +238,7 @@ Report creation returns HTTP 202 Accepted:
 ```python
 {
     "report_id": "rpt_abc123def456",
-    "token": "tok_xyz789abc123",  # Save this for Solutions Mode 1
+    "token": "tok_xyz789abc123",  # Save for Solutions Mode 1
     "org_id": "org_xyz789",
     "product": "signal",
     "status": "queued",
@@ -195,37 +255,9 @@ Completed reports include download URLs (expire in 15 minutes):
 {
     "status": "completed",
     "download_url": "https://storage.googleapis.com/...",      # PDF
-    "pptx_download_url": "https://storage.googleapis.com/...", # PPTX (Pro only)
+    "pptx_download_url": "https://storage.googleapis.com/...", # PPTX (Pro/Premium)
     "intelligence_download_url": "https://storage.googleapis.com/...", # Full JSON
 }
-```
-
-## Error Handling
-
-```python
-from surmado import (
-    Surmado,
-    AuthenticationError,
-    InsufficientCreditsError,
-    NotFoundError,
-    ValidationError,
-    SurmadoError
-)
-
-client = Surmado()
-
-try:
-    result = client.signal(...)
-except AuthenticationError:
-    print("Invalid API key")
-except InsufficientCreditsError as e:
-    print(f"Need more credits: {e.response}")
-except NotFoundError:
-    print("Brand or report not found")
-except ValidationError as e:
-    print(f"Invalid request: {e}")
-except SurmadoError as e:
-    print(f"API error: {e.status_code} - {e}")
 ```
 
 ## Field Length Limits
@@ -250,29 +282,23 @@ except SurmadoError as e:
 
 ## Pricing
 
-| Product | Price | Credits |
-|---------|-------|---------|
-| Scan Basic | $25 | 1 |
-| Scan Premium | $50 | 2 |
-| Signal Basic | $25 | 1 |
-| Signal Pro | $50 | 2 |
-| Solutions | $50 | 2 |
+1 credit = $25. Basic reports cost 1 credit, Pro/Premium cost 2. No subscriptions.
 
-**Credits:** 1 credit = $25. No subscriptions. Credits don't expire.
+## Versioning
+
+This package follows [SemVer](https://semver.org/). To check your installed version:
+
+```python
+import surmado
+print(surmado.__version__)
+```
 
 ## Links
 
-- [Documentation](https://help.surmado.com/docs/api-reference/)
-- [Get API Key](https://surmado.com/login)
-- [API Examples](https://github.com/surmado/surmado-api-public)
-
-## About Surmado
-
-Surmado is an AI marketing intelligence company based in San Diego, California. Founded in October 2025, we build tools that help businesses understand their visibility in AI search results and traditional SEO.
-
-- Website: [surmado.com](https://surmado.com)
-- Help: [help.surmado.com](https://help.surmado.com)
-- Contact: [hi@surmado.com](mailto:hi@surmado.com)
+- **Docs:** [help.surmado.com/docs/api-reference](https://help.surmado.com/docs/api-reference/)
+- **API Key:** [surmado.com/login](https://surmado.com/login)
+- **Examples:** [github.com/surmado/surmado-api-public](https://github.com/surmado/surmado-api-public)
+- **Issues:** [github.com/surmado/surmado-python/issues](https://github.com/surmado/surmado-python/issues)
 
 ## License
 

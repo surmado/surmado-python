@@ -12,7 +12,7 @@ from surmado import Surmado, SurmadoError, InsufficientCreditsError
 
 def main():
     # Initialize client (reads SURMADO_API_KEY from env)
-    client = Surmado()
+    client = Surmado(api_key="")
     print("✓ Surmado client initialized")
     
     # Example 1: Run a Scan report
@@ -50,7 +50,6 @@ def main():
             tier="basic"
         )
         print(f"✓ Signal report created: {signal_result['report_id']}")
-        print(f"  Token (for Solutions): {signal_result.get('token', 'N/A')}")
     except InsufficientCreditsError:
         print("✗ Not enough credits for Signal report")
     except SurmadoError as e:
@@ -71,6 +70,7 @@ def main():
     # print(f"✓ Report completed!")
     # print(f"  PDF: {completed.get('download_url', 'N/A')}")
     # print(f"  JSON: {completed.get('intelligence_download_url', 'N/A')}")
+    # print(f"  Token (for Solutions): {completed.get('token', 'N/A')}")
     
     print("\n✓ Done! Reports are processing (~15 min).")
     print("  Check status: client.get_report(report_id)")

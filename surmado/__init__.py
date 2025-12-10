@@ -32,6 +32,7 @@ from .client import (
     InsufficientCreditsError,
     NotFoundError,
     ValidationError,
+    RateLimitError,
     __version__,
 )
 
@@ -42,6 +43,7 @@ __all__ = [
     "InsufficientCreditsError",
     "NotFoundError",
     "ValidationError",
+    "RateLimitError",
     "__version__",
 ]
 
