@@ -419,13 +419,11 @@ class Surmado:
             - status: "queued", "processing", "completed", or "failed"
             - download_url: Signed PDF URL (expires in 15 minutes)
             - pptx_download_url: Signed PPTX URL (Pro/Premium tiers)
-            - intelligence_download_url: Signed JSON URL with full data
         
         Example:
             >>> report = client.get_report("rpt_abc123")
             >>> if report["status"] == "completed":
             ...     print(f"PDF: {report['download_url']}")
-            ...     print(f"JSON: {report['intelligence_download_url']}")
         """
         return self._get(f"/reports/{report_id}")
     
