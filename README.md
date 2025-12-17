@@ -256,9 +256,99 @@ Completed reports include download URLs (expire in 15 minutes):
     "status": "completed",
     "download_url": "https://storage.googleapis.com/...",      # PDF
     "pptx_download_url": "https://storage.googleapis.com/...", # PPTX (Pro/Premium)
-    "intelligence_download_url": "https://storage.googleapis.com/...", # Full JSON
 }
 ```
+
+## Webhook Payload
+
+When using `webhook_url`, your endpoint receives a POST with this structure:
+
+```python
+{
+    "event": "report.completed",  # or "report.failed"
+    "timestamp": "2025-12-17T20:33:58.737743+00:00",
+    "report": {
+        "id": "daSwEVPimdjKStdgx3HS",
+        "token": "SIG-2025-12-3AHGD",
+        "product": "signal",
+        "status": "completed",
+        "tier": "pro",
+        "data_url": "https://api.surmado.com/v1/reports/daSwEVPimdjKStdgx3HS",
+        "pdf_url": "https://api.surmado.com/v1/reports/view/C9VUr2VhSQvPG...",
+        "credits_refunded": False,
+        "summary": {
+            "business_name": "Acme Corp",
+            "contact_email": "you@example.com",
+            "industry": "B2B SaaS",
+            "brand_url": "https://acme.com",
+            "location": "San Francisco, CA",
+            "presence_score": 72,
+            "category_share": 18.9,
+            "authority_score": 85,
+            "competitive_rank": 1,
+            "competitive_tier": "Leader",
+            "top_competitor": "Competitor X",
+            "insights_summary": ["..."],
+            "pain_points_summary": ["..."]
+        }
+    }
+}
+```
+
+### Webhook Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | `string` | `report.completed` or `report.failed` |
+| `timestamp` | `string` | ISO 8601 when webhook was sent |
+| `report.id` | `string` | Report ID |
+| `report.token` | `string` | Report token (e.g., `SIG-2025-12-3AHGD`) |
+| `report.product` | `string` | `signal`, `scan`, `solutions`, or `monitor` |
+| `report.status` | `string` | `completed` or `failed` |
+| `report.tier` | `string` | `basic`, `pro`, or `premium` |
+| `report.data_url` | `string` | API endpoint to fetch full report |
+| `report.pdf_url` | `string` | Magic link to view PDF (30-day expiry) |
+| `report.credits_refunded` | `bool` | `True` if credits were refunded |
+| `report.failure_reason` | `string` | Error message (only present when `status=failed`) |
+| `report.summary` | `object` | Curated metrics (fields vary by product) |
+
+### Summary Fields (Signal)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `business_name` | `string` | Brand name |
+| `contact_email` | `string` | Email from request |
+| `industry` | `string` | Industry category |
+| `brand_url` | `string` | Brand website |
+| `location` | `string` | Geographic location |
+| `presence_score` | `number` | AI visibility score (0-100) |
+| `category_share` | `number` | Share of category mentions (%) |
+| `authority_score` | `number` | Brand authority rating (0-100) |
+| `competitive_rank` | `number` | Rank among competitors |
+| `competitive_tier` | `string` | `Leader`, `Challenger`, etc. |
+| `top_competitor` | `string` | Highest-ranked competitor |
+| `insights_summary` | `string[]` | Key insights from analysis |
+| `pain_points_summary` | `string[]` | Customer pain points |
+
+### Summary Fields (Scan)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `business_name` | `string` | Brand name |
+| `contact_email` | `string` | Email from request |
+| `seo_score` | `number` | Overall SEO score (0-100) |
+| `performance_score` | `number` | Page performance score (0-100) |
+| `accessibility_score` | `number` | Accessibility score (0-100) |
+| `total_pages` | `number` | Total pages analyzed |
+| `schema_types_count` | `number` | Number of schema markup types found |
+| `critical_issues_count` | `number` | Count of critical SEO issues |
+| `critical_issues` | `string[]` | List of critical issues found |
+| `content_coverage_percentage` | `number` | Content coverage (%) |
+| `page_analysis_summary` | `string` | Executive summary of page analysis |
+| `link_analysis_summary` | `string` | Executive summary of link analysis |
+| `quick_wins` | `object` | Combined quick wins from analysis |
+
+
 
 ## Field Length Limits
 

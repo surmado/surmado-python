@@ -9,7 +9,7 @@ import time
 import requests
 from typing import Dict, Optional, Any, List
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 class SurmadoError(Exception):
