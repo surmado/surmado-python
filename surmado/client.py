@@ -9,7 +9,7 @@ import time
 import requests
 from typing import Dict, Optional, Any, List
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 class SurmadoError(Exception):
@@ -59,6 +59,12 @@ class Surmado:
     Example:
         >>> from surmado import Surmado
         >>> client = Surmado()  # reads SURMADO_API_KEY from env
+        >>>
+        >>> # Full Analysis Bundle (Site Audit + AI Visibility + Strategy)
+        >>> result = client.bundle(brand_slug="acme_corp", email="you@acme.com")
+        >>> print(result["bundle_id"])
+        >>>
+        >>> # Or run individual reports
         >>> result = client.signal(
         ...     url="https://example.com",
         ...     brand_name="Example Brand",
@@ -90,7 +96,7 @@ class Surmado:
         self.timeout = timeout
 
     # =========================================================================
-    # Full Report Methods (all fields provided)
+    # Full Report Methods (all fields provided inline)
     # =========================================================================
 
     def signal(
@@ -107,10 +113,11 @@ class Surmado:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Run an AI Visibility Test (Signal).
+        Run an AI Visibility report.
 
         Tests how your brand appears across 7 AI platforms:
         ChatGPT, Perplexity, Google Gemini, Claude, Meta AI, Grok, DeepSeek.
+        Costs 1 credit.
 
         Args:
             url: Your website URL to analyze (required)
@@ -170,9 +177,10 @@ class Surmado:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Run an SEO Audit (Scan).
+        Run a Site Audit report.
 
         Comprehensive SEO analysis with prioritized recommendations.
+        Costs 1 credit.
 
         Args:
             url: Website URL to audit (required)
@@ -218,20 +226,20 @@ class Surmado:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Run Strategic Advisory (Solutions).
+        Run a Strategy report.
 
         Multi-AI strategic recommendations from 6 specialized agents.
+        Costs 1 credit.
 
-        Three modes:
-        1. Signal Token Mode (recommended): Pass signal_token from a Signal report.
-           Solutions inherits context automatically. Optionally add scan_token.
-        2. Standalone Mode: Provide all business context fields.
-        3. Combined Mode: signal_token + scan_token for full context.
+        Two modes:
+        1. AI Visibility Token Mode (recommended): Pass signal_token from an
+           AI Visibility report. Strategy inherits context automatically.
+        2. Standalone Mode: Provide all business context fields manually.
 
         Args:
             email: Email for notifications (required)
-            signal_token: Token from a Signal report (Mode 1 - recommended)
-            scan_token: Token from a Scan report (optional, adds SEO context)
+            signal_token: Token from an AI Visibility report (Mode 1 - recommended)
+            scan_token: Token from a Site Audit report (optional, adds SEO context)
             brand_name: Your brand name (max 100 chars, required for Mode 2)
             business_story: About your business (max 2000 chars, required for Mode 2)
             decision: Key challenge you're facing (max 1500 chars, required for Mode 2)
@@ -250,10 +258,10 @@ class Surmado:
         Returns:
             Report creation response with report_id and status
 
-        Example (Mode 1 - with Signal token):
-            >>> # First run Signal
+        Example (Mode 1 - with AI Visibility token):
+            >>> # First run AI Visibility
             >>> signal = client.signal(...)
-            >>> # Then run Solutions with the token
+            >>> # Then run Strategy with the token
             >>> result = client.solutions(
             ...     email="you@acme.com",
             ...     signal_token=signal["token"]
@@ -299,6 +307,74 @@ class Surmado:
         return self._post("/reports/solutions", payload)
 
     # =========================================================================
+    # Bundle (Full Analysis - all 3 reports in one call)
+    # =========================================================================
+
+    def bundle(
+        self,
+        brand_slug: str,
+        email: str,
+        persona_slug: str = None,
+        webhook_url: str = None,
+    ) -> Dict[str, Any]:
+        """
+        Run a Full Analysis Bundle (Site Audit + AI Visibility + Strategy).
+
+        Creates all 3 reports in a single call. Site Audit is always included
+        automatically — the bundle is all-or-nothing.
+
+        The bundle loads all form data from your stored brand profile,
+        so you only need to provide the brand slug and email.
+
+        Flow:
+            1. Atomic credit deduction (3 credits upfront)
+            2. Site Audit + AI Visibility queued in parallel
+            3. Strategy auto-triggered when AI Visibility completes
+
+        Prerequisites:
+            - Brand must exist with a complete profile (brand_context with
+              website, industry, personas, competitors, etc.)
+            - Set up via dashboard wizard or PUT /v1/profiles/{brand_slug}/brand-context
+
+        Args:
+            brand_slug: Brand identifier with a complete profile (required)
+            email: Contact email for report delivery (required)
+            persona_slug: Which persona for AI Visibility (defaults to first persona in profile)
+            webhook_url: URL to receive POST when each report completes (HTTPS required)
+
+        Returns:
+            Bundle response with:
+            - bundle_id: Unique bundle identifier
+            - credits_charged: Total credits charged (0 for baseline, 3 for paid)
+            - credits_remaining: Credits remaining after charge
+            - is_baseline: True if all reports are baseline (free)
+            - reports: Dict with scan, signal, solutions — each has report_id and status
+
+        Example:
+            >>> result = client.bundle(
+            ...     brand_slug="acme_corp",
+            ...     email="you@acme.com"
+            ... )
+            >>> print(f"Bundle ID: {result['bundle_id']}")
+            >>> print(f"Credits charged: {result['credits_charged']}")
+            >>> for product, info in result["reports"].items():
+            ...     print(f"  {product}: {info['report_id']} ({info['status']})")
+
+        Raises:
+            NotFoundError: If brand_slug not found or profile incomplete
+            InsufficientCreditsError: If account has fewer than 3 credits
+        """
+        payload = {
+            "brand_slug": brand_slug,
+            "email": email,
+        }
+        if persona_slug:
+            payload["persona_slug"] = persona_slug
+        if webhook_url:
+            payload["webhook_url"] = webhook_url
+        return self._post("/reports/bundle", payload)
+
+    # =========================================================================
     # Rerun Methods (minimal inputs - uses stored brand context)
     # =========================================================================
 
@@ -309,10 +385,11 @@ class Surmado:
         email: str,
     ) -> Dict[str, Any]:
         """
-        Re-run a Signal report with minimal inputs.
+        Re-run an AI Visibility report with minimal inputs.
 
         Uses stored brand context - no need to re-enter all fields.
         Ideal for automation (Zapier, Make, n8n) and dashboard "Run Again" flows.
+        Costs 1 credit.
 
         Prerequisites:
             - Brand must exist with populated brand_context
@@ -352,10 +429,11 @@ class Surmado:
         email: str,
     ) -> Dict[str, Any]:
         """
-        Re-run a Scan report with minimal inputs.
+        Re-run a Site Audit report with minimal inputs.
 
         Uses stored brand context (website URL, competitor URLs).
         Ideal for automation and scheduled SEO monitoring.
+        Costs 1 credit.
 
         Prerequisites:
             - Brand must exist with populated brand_context.website
