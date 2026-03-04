@@ -9,12 +9,12 @@ import time
 import requests
 from typing import Dict, Optional, Any, List
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 
 
 class SurmadoError(Exception):
     """Base exception for Surmado SDK errors."""
-    
+
     def __init__(self, message: str, status_code: int = None, response: dict = None):
         super().__init__(message)
         self.status_code = status_code
@@ -49,13 +49,13 @@ class RateLimitError(SurmadoError):
 class Surmado:
     """
     Official Surmado API client.
-    
+
     Args:
         api_key (str): Your Surmado API key  (starts with sur_live_ or sur_test_).
-                    If not provided, reads from SURMADO_API_KEY environment variable. Must be a string.
+                    If not provided, reads from SURMADO_API_KEY environment variable.
         base_url (str): API base URL. Defaults to https://api.surmado.com/v1.
         timeout (int): Request timeout in seconds. Defaults to 30.
-    
+
     Example:
         >>> from surmado import Surmado
         >>> client = Surmado()  # reads SURMADO_API_KEY from env
@@ -72,7 +72,7 @@ class Surmado:
         ... )
         >>> print(result["report_id"])
     """
-    
+
     def __init__(
         self,
         api_key: str = None,
@@ -85,14 +85,14 @@ class Surmado:
                 "API key required. Set SURMADO_API_KEY environment variable "
                 "or pass api_key parameter."
             )
-        
+
         self.base_url = base_url or "https://api.surmado.com/v1"
         self.timeout = timeout
-    
+
     # =========================================================================
     # Full Report Methods (all fields provided)
     # =========================================================================
-    
+
     def signal(
         self,
         url: str,
@@ -104,15 +104,14 @@ class Surmado:
         pain_points: str,
         brand_details: str,
         direct_competitors: str,
-        tier: str = "basic",
         **kwargs
     ) -> Dict[str, Any]:
         """
         Run an AI Visibility Test (Signal).
-        
+
         Tests how your brand appears across 7 AI platforms:
         ChatGPT, Perplexity, Google Gemini, Claude, Meta AI, Grok, DeepSeek.
-        
+
         Args:
             url: Your website URL to analyze (required)
             brand_name: Your brand name (max 100 chars, required)
@@ -123,18 +122,17 @@ class Surmado:
             pain_points: Problems your product solves as comma-separated string (max 1000 chars, required)
             brand_details: Your brand positioning (max 1200 chars, required)
             direct_competitors: Competitor names as comma-separated string (max 500 chars, required)
-            tier: "basic" (1 credit, $25) or "pro" (2 credits, $50)
-        
+
         Optional kwargs:
             indirect_competitors: Alternative solutions (max 500 chars)
             keywords: Target keywords as comma-separated string (max 500 chars)
             product: Product/service description (max 1000 chars)
             business_scale: "small", "medium", or "large" (default: "medium")
             webhook_url: URL to receive POST when report completes (HTTPS required)
-        
+
         Returns:
             Report creation response with report_id, token, and status
-        
+
         Example:
             >>> result = client.signal(
             ...     url="https://acme.com",
@@ -160,44 +158,40 @@ class Surmado:
             "pain_points": pain_points,
             "brand_details": brand_details,
             "direct_competitors": direct_competitors,
-            "tier": tier,
             **kwargs
         }
         return self._post("/reports/signal", payload)
-    
+
     def scan(
         self,
         url: str,
         brand_name: str,
         email: str,
-        tier: str = "basic",
         **kwargs
     ) -> Dict[str, Any]:
         """
         Run an SEO Audit (Scan).
-        
+
         Comprehensive SEO analysis with prioritized recommendations.
-        
+
         Args:
             url: Website URL to audit (required)
             brand_name: Your brand name (max 100 chars, required)
             email: Email for notifications (required)
-            tier: "basic" (1 credit, $25) or "premium" (2 credits, $50)
-        
+
         Optional kwargs:
             competitor_urls: List of competitor URLs to compare against
             report_style: "executive", "technical", or "comprehensive" (default: "executive")
             webhook_url: URL to receive POST when report completes (HTTPS required)
-        
+
         Returns:
             Report creation response with report_id and status
-        
+
         Example:
             >>> result = client.scan(
             ...     url="https://acme.com",
             ...     brand_name="Acme Corp",
             ...     email="you@acme.com",
-            ...     tier="premium",
             ...     competitor_urls=["https://competitor1.com", "https://competitor2.com"]
             ... )
             >>> print(f"Report ID: {result['report_id']}")
@@ -206,11 +200,10 @@ class Surmado:
             "url": self._normalize_url(url),
             "brand_name": brand_name,
             "email": email,
-            "tier": tier,
             **kwargs
         }
         return self._post("/reports/scan", payload)
-    
+
     def solutions(
         self,
         email: str,
@@ -226,16 +219,15 @@ class Surmado:
     ) -> Dict[str, Any]:
         """
         Run Strategic Advisory (Solutions).
-        
+
         Multi-AI strategic recommendations from 6 specialized agents.
-        Always uses Pro tier (2 credits, $50).
-        
+
         Three modes:
         1. Signal Token Mode (recommended): Pass signal_token from a Signal report.
            Solutions inherits context automatically. Optionally add scan_token.
         2. Standalone Mode: Provide all business context fields.
         3. Combined Mode: signal_token + scan_token for full context.
-        
+
         Args:
             email: Email for notifications (required)
             signal_token: Token from a Signal report (Mode 1 - recommended)
@@ -246,7 +238,7 @@ class Surmado:
             success: What success looks like (max 1000 chars, required for Mode 2)
             timeline: Decision timeline (max 200 chars, required for Mode 2)
             scale_indicator: Business scale indicator (max 100 chars, required for Mode 2)
-        
+
         Optional kwargs (for financial analysis):
             include_financial: "yes" or "no" to include financial analysis
             financial_context: Financial situation description (max 1000 chars)
@@ -254,10 +246,10 @@ class Surmado:
             monthly_costs: Monthly costs (max 50 chars)
             cash_available: Available cash (max 50 chars)
             webhook_url: URL to receive POST when report completes (HTTPS required)
-        
+
         Returns:
             Report creation response with report_id and status
-        
+
         Example (Mode 1 - with Signal token):
             >>> # First run Signal
             >>> signal = client.signal(...)
@@ -266,7 +258,7 @@ class Surmado:
             ...     email="you@acme.com",
             ...     signal_token=signal["token"]
             ... )
-        
+
         Example (Mode 2 - standalone):
             >>> result = client.solutions(
             ...     email="you@acme.com",
@@ -279,7 +271,7 @@ class Surmado:
             ... )
         """
         payload = {"email": email, **kwargs}
-        
+
         if signal_token:
             payload["signal_token"] = signal_token
             if scan_token:
@@ -303,39 +295,37 @@ class Surmado:
             })
             if scan_token:
                 payload["scan_token"] = scan_token
-        
+
         return self._post("/reports/solutions", payload)
-    
+
     # =========================================================================
     # Rerun Methods (minimal inputs - uses stored brand context)
     # =========================================================================
-    
+
     def signal_rerun(
         self,
         brand_slug: str,
         persona_slug: str,
         email: str,
-        tier: str = "basic"
     ) -> Dict[str, Any]:
         """
         Re-run a Signal report with minimal inputs.
-        
+
         Uses stored brand context - no need to re-enter all fields.
         Ideal for automation (Zapier, Make, n8n) and dashboard "Run Again" flows.
-        
+
         Prerequisites:
             - Brand must exist with populated brand_context
             - Persona must be configured in brand_context.personas
-        
+
         Args:
             brand_slug: Brand identifier (e.g., "acme_corp")
             persona_slug: Persona identifier from brand settings (e.g., "cto-enterprise")
             email: Email for notifications
-            tier: "basic" (1 credit) or "pro" (2 credits)
-        
+
         Returns:
             Report creation response with report_id and status
-        
+
         Example:
             >>> # After setting up brand and personas in dashboard
             >>> result = client.signal_rerun(
@@ -344,7 +334,7 @@ class Surmado:
             ...     email="you@acme.com"
             ... )
             >>> print(f"Report ID: {result['report_id']}")
-        
+
         Raises:
             NotFoundError: If brand_slug or persona_slug not found
             ValidationError: If brand_context is incomplete
@@ -353,42 +343,38 @@ class Surmado:
             "brand_slug": brand_slug,
             "persona_slug": persona_slug,
             "email": email,
-            "tier": tier,
         }
         return self._post("/reports/signal/rerun", payload)
-    
+
     def scan_rerun(
         self,
         brand_slug: str,
         email: str,
-        tier: str = "basic"
     ) -> Dict[str, Any]:
         """
         Re-run a Scan report with minimal inputs.
-        
+
         Uses stored brand context (website URL, competitor URLs).
         Ideal for automation and scheduled SEO monitoring.
-        
+
         Prerequisites:
             - Brand must exist with populated brand_context.website
-        
+
         Args:
             brand_slug: Brand identifier (e.g., "acme_corp")
             email: Email for notifications
-            tier: "basic" (1 credit) or "premium" (2 credits)
-        
+
         Returns:
             Report creation response with report_id and status
-        
+
         Example:
             >>> # After setting up brand in dashboard
             >>> result = client.scan_rerun(
             ...     brand_slug="acme_corp",
-            ...     email="you@acme.com",
-            ...     tier="premium"
+            ...     email="you@acme.com"
             ... )
             >>> print(f"Report ID: {result['report_id']}")
-        
+
         Raises:
             NotFoundError: If brand_slug not found
             ValidationError: If brand_context.website is missing
@@ -396,37 +382,66 @@ class Surmado:
         payload = {
             "brand_slug": brand_slug,
             "email": email,
-            "tier": tier,
         }
         return self._post("/reports/scan/rerun", payload)
-    
+
     # =========================================================================
     # Report Status & Listing
     # =========================================================================
-    
+
     def get_report(self, report_id: str) -> Dict[str, Any]:
         """
         Get report status and results.
-        
+
         Poll this endpoint to check if your report is ready.
         When status is "completed", download URLs will be included.
-        
+
         Args:
             report_id: The report ID returned from signal(), scan(), or solutions()
-        
+
         Returns:
             Report status with download URLs when completed:
             - status: "queued", "processing", "completed", or "failed"
             - download_url: Signed PDF URL (expires in 15 minutes)
-            - pptx_download_url: Signed PPTX URL (Pro/Premium tiers)
-        
+            - pptx_download_url: Signed PPTX URL (expires in 15 minutes)
+
         Example:
             >>> report = client.get_report("rpt_abc123")
             >>> if report["status"] == "completed":
             ...     print(f"PDF: {report['download_url']}")
         """
         return self._get(f"/reports/{report_id}")
-    
+
+    def get_report_data(
+        self,
+        report_id: str,
+        fields: List[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Get raw report data with optional field filtering.
+
+        Returns the full report data (metrics, analysis, etc.) as JSON.
+        Use the fields parameter to request only specific fields.
+
+        Args:
+            report_id: The report ID
+            fields: Optional list of field names to return (e.g., ["status", "insights"])
+
+        Returns:
+            Raw report data dict (full or filtered)
+
+        Example:
+            >>> data = client.get_report_data("rpt_abc123")
+            >>> print(data["status"])
+
+            >>> # Get only specific fields
+            >>> data = client.get_report_data("rpt_abc123", fields=["status", "insights"])
+        """
+        endpoint = f"/reports/{report_id}/data"
+        if fields:
+            endpoint += f"?fields={','.join(fields)}"
+        return self._get(endpoint)
+
     def list_reports(
         self,
         page: int = 1,
@@ -434,21 +449,21 @@ class Surmado:
     ) -> Dict[str, Any]:
         """
         List all reports for your organization.
-        
+
         Args:
             page: Page number (1-indexed)
             page_size: Reports per page (max 100)
-        
+
         Returns:
             Paginated list of reports with download URLs for completed reports
-        
+
         Example:
             >>> result = client.list_reports(page=1, page_size=10)
             >>> for report in result["reports"]:
             ...     print(f"{report['report_id']}: {report['status']}")
         """
         return self._get(f"/reports?page={page}&page_size={page_size}")
-    
+
     def wait_for_report(
         self,
         report_id: str,
@@ -457,20 +472,20 @@ class Surmado:
     ) -> Dict[str, Any]:
         """
         Wait for a report to complete.
-        
+
         Polls the report status until it's completed, failed, or timeout.
-        
+
         Args:
             report_id: The report ID to wait for
             timeout_minutes: Maximum time to wait (default 20 minutes)
             poll_interval: Seconds between status checks (default 30)
-        
+
         Returns:
             Completed report with download URLs
-        
+
         Raises:
             SurmadoError: If report fails or times out
-        
+
         Example:
             >>> result = client.signal(...)
             >>> completed = client.wait_for_report(result["report_id"])
@@ -478,11 +493,11 @@ class Surmado:
         """
         start = time.time()
         timeout_seconds = timeout_minutes * 60
-        
+
         while time.time() - start < timeout_seconds:
             report = self.get_report(report_id)
             status = report.get("status")
-            
+
             if status == "completed":
                 return report
             elif status == "failed":
@@ -490,24 +505,129 @@ class Surmado:
                 raise SurmadoError(error_msg, response=report)
             elif status == "cancelled":
                 raise SurmadoError("Report was cancelled", response=report)
-            
+
             time.sleep(poll_interval)
-        
+
         raise SurmadoError(
             f"Report did not complete within {timeout_minutes} minutes",
             response={"report_id": report_id, "status": "timeout"}
         )
-    
+
+    # =========================================================================
+    # Brand Management
+    # =========================================================================
+
+    def list_brands(self) -> Dict[str, Any]:
+        """
+        List all brands for your organization.
+
+        Returns:
+            List of brand objects with slugs, names, and metadata
+
+        Example:
+            >>> brands = client.list_brands()
+            >>> for brand in brands.get("brands", []):
+            ...     print(f"{brand['brand_slug']}: {brand['brand_name']}")
+        """
+        return self._get("/brands")
+
+    def create_brand(
+        self,
+        brand_name: str,
+        url: str = None,
+        industry: str = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Create a new brand profile.
+
+        Args:
+            brand_name: Brand name (max 100 chars, required)
+            url: Brand website URL
+            industry: Industry/sector (max 200 chars)
+
+        Returns:
+            Created brand object with brand_slug
+
+        Raises:
+            ValidationError: If brand already exists (use ensure_brand instead)
+
+        Example:
+            >>> brand = client.create_brand(
+            ...     brand_name="Acme Corp",
+            ...     url="https://acme.com",
+            ...     industry="B2B SaaS"
+            ... )
+            >>> print(f"Created: {brand['brand_slug']}")
+        """
+        payload = {"brand_name": brand_name, **kwargs}
+        if url:
+            payload["url"] = self._normalize_url(url)
+        if industry:
+            payload["industry"] = industry
+        return self._post("/brands", payload)
+
+    def ensure_brand(
+        self,
+        brand_name: str,
+        url: str = None,
+        industry: str = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Create a brand if it doesn't exist, or return existing one.
+
+        Unlike create_brand, this never fails with a 409 conflict.
+
+        Args:
+            brand_name: Brand name (max 100 chars, required)
+            url: Brand website URL
+            industry: Industry/sector (max 200 chars)
+
+        Returns:
+            Brand object with brand_slug (created or existing)
+
+        Example:
+            >>> brand = client.ensure_brand(
+            ...     brand_name="Acme Corp",
+            ...     url="https://acme.com"
+            ... )
+            >>> print(f"Slug: {brand['brand_slug']}")
+        """
+        payload = {"brand_name": brand_name, **kwargs}
+        if url:
+            payload["url"] = self._normalize_url(url)
+        if industry:
+            payload["industry"] = industry
+        return self._post("/brands/ensure", payload)
+
+    # =========================================================================
+    # Utility
+    # =========================================================================
+
+    def test_auth(self) -> Dict[str, Any]:
+        """
+        Test your API key without consuming credits.
+
+        Returns:
+            Auth status with org info
+
+        Example:
+            >>> result = client.test_auth()
+            >>> print(f"Authenticated as: {result.get('org_id')}")
+        """
+        return self._get("/test-auth")
+
     # =========================================================================
     # Internal HTTP Methods
     # =========================================================================
-    
+
     def _normalize_url(self, url: str) -> str:
         """Add https:// if no protocol specified."""
         if url and not url.startswith(('http://', 'https://')):
             return f"https://{url}"
         return url
-    
+
     def _headers(self) -> Dict[str, str]:
         """Build request headers."""
         return {
@@ -515,7 +635,7 @@ class Surmado:
             "Content-Type": "application/json",
             "User-Agent": f"surmado-python/{__version__}",
         }
-    
+
     def _post(self, endpoint: str, data: Dict) -> Dict[str, Any]:
         """Make a POST request."""
         response = requests.post(
@@ -525,7 +645,7 @@ class Surmado:
             timeout=self.timeout
         )
         return self._handle_response(response)
-    
+
     def _get(self, endpoint: str) -> Dict[str, Any]:
         """Make a GET request."""
         response = requests.get(
@@ -534,47 +654,80 @@ class Surmado:
             timeout=self.timeout
         )
         return self._handle_response(response)
-    
+
+    def _delete(self, endpoint: str) -> Dict[str, Any]:
+        """Make a DELETE request."""
+        response = requests.delete(
+            f"{self.base_url}{endpoint}",
+            headers=self._headers(),
+            timeout=self.timeout
+        )
+        return self._handle_response(response)
+
+    def _extract_error_message(self, data: dict, fallback: str) -> str:
+        """Extract error message from API response.
+
+        Handles the canonical format: {"detail": {"error": {"code": "...", "message": "..."}}}
+        Plus legacy/fallback formats.
+        """
+        detail = data.get("detail")
+        if isinstance(detail, dict):
+            error_obj = detail.get("error", {})
+            if isinstance(error_obj, dict) and "message" in error_obj:
+                return error_obj["message"]
+            if "message" in detail:
+                return detail["message"]
+        if isinstance(detail, str):
+            return detail
+        return data.get("message") or data.get("error") or fallback
+
     def _handle_response(self, response: requests.Response) -> Dict[str, Any]:
         """Handle API response and raise appropriate errors."""
         try:
             data = response.json()
         except ValueError:
             data = {"error": response.text}
-        
+
         if response.status_code == 401:
             raise AuthenticationError(
-                "Invalid or missing API key",
+                self._extract_error_message(data, "Invalid or missing API key"),
                 status_code=401,
                 response=data
             )
-        
+
         if response.status_code == 402:
             raise InsufficientCreditsError(
-                data.get("message") or "Insufficient credits",
+                self._extract_error_message(data, "Insufficient credits"),
                 status_code=402,
                 response=data
             )
-        
+
         if response.status_code == 404:
             raise NotFoundError(
-                data.get("error") or "Resource not found",
+                self._extract_error_message(data, "Resource not found"),
                 status_code=404,
                 response=data
             )
-        
-        if response.status_code == 422:
-            raise ValidationError(
-                data.get("detail") or data.get("error") or "Invalid request data",
-                status_code=422,
+
+        if response.status_code == 429:
+            raise RateLimitError(
+                self._extract_error_message(data, "Rate limit exceeded"),
+                status_code=429,
                 response=data
             )
-        
-        if response.status_code >= 400:
-            raise SurmadoError(
-                data.get("error") or f"API error: {response.status_code}",
+
+        if response.status_code in (400, 422):
+            raise ValidationError(
+                self._extract_error_message(data, "Invalid request data"),
                 status_code=response.status_code,
                 response=data
             )
-        
+
+        if response.status_code >= 400:
+            raise SurmadoError(
+                self._extract_error_message(data, f"API error: {response.status_code}"),
+                status_code=response.status_code,
+                response=data
+            )
+
         return data

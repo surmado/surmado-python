@@ -58,7 +58,6 @@ result = client.signal(
     pain_points="Integration challenges, lack of visibility",  # max 1000 chars
     brand_details="Modern, dev-focused tooling",         # max 1200 chars
     direct_competitors="Asana, Monday.com",              # max 500 chars
-    tier="pro"  # "basic" (1 credit) or "pro" (2 credits)
 )
 ```
 
@@ -71,7 +70,6 @@ result = client.scan(
     url="https://acme.com",
     brand_name="Acme Corp",
     email="you@acme.com",
-    tier="premium",  # "basic" (1 credit) or "premium" (2 credits)
     competitor_urls=["https://competitor1.com", "https://competitor2.com"]
 )
 ```
@@ -124,23 +122,41 @@ result = client.solutions(
 Once you've set up a brand with personas in the Surmado dashboard, run reports with minimal code:
 
 ```python
-# Signal: 4 fields instead of 10+
+# Signal: 3 fields instead of 10+
 result = client.signal_rerun(
     brand_slug="acme_corp",
     persona_slug="cto-enterprise",
-    email="you@acme.com",
-    tier="basic"
+    email="you@acme.com"
 )
 
-# Scan: 3 fields
+# Scan: 2 fields
 result = client.scan_rerun(
     brand_slug="acme_corp",
-    email="you@acme.com",
-    tier="premium"
+    email="you@acme.com"
 )
 ```
 
 Perfect for Zapier/Make/n8n workflows, scheduled monitoring, and dashboard integrations.
+
+## Brand Management
+
+```python
+# List all brands
+brands = client.list_brands()
+
+# Create a brand (fails if already exists)
+brand = client.create_brand(
+    brand_name="Acme Corp",
+    url="https://acme.com",
+    industry="B2B SaaS"
+)
+
+# Create or get existing brand (never fails with conflict)
+brand = client.ensure_brand(
+    brand_name="Acme Corp",
+    url="https://acme.com"
+)
+```
 
 ## Async Reports & Polling
 
@@ -164,6 +180,18 @@ report = client.signal(
     webhook_url="https://your-server.com/webhook"
 )
 # Your webhook receives POST with full report data when complete
+```
+
+## Report Data
+
+Access raw report data (metrics, analysis) as JSON:
+
+```python
+# Full data
+data = client.get_report_data("rpt_abc123")
+
+# Specific fields only
+data = client.get_report_data("rpt_abc123", fields=["status", "insights"])
 ```
 
 ## Handling Errors
@@ -190,7 +218,7 @@ except AuthenticationError:
 except InsufficientCreditsError as e:
     print(f"Not enough credits: {e.response}")
 except RateLimitError:
-    print("Too many requests — back off and retry")
+    print("Too many requests - back off and retry")
 except NotFoundError:
     print("Brand or report not found")
 except ValidationError as e:
@@ -207,21 +235,27 @@ except SurmadoError as e:
 | 401 | `AuthenticationError` |
 | 402 | `InsufficientCreditsError` |
 | 404 | `NotFoundError` |
+| 422 | `ValidationError` |
 | 429 | `RateLimitError` |
-| ≥500 | `SurmadoError` |
+| >=500 | `SurmadoError` |
 
 All exceptions inherit from `SurmadoError` and include `status_code` and `response` attributes.
 
-## Timeouts
+## Test Your Key
 
-Default request timeout is 30 seconds. Configure per-client or per-request:
+Verify your API key is valid without consuming credits:
 
 ```python
-# Client-level default
-client = Surmado(api_key="...", timeout=60)
+result = client.test_auth()
+print(f"Authenticated as: {result.get('org_id')}")
+```
 
-# Per-request override
-result = client.signal(..., timeout=45)
+## Timeouts
+
+Default request timeout is 30 seconds. Configure per-client:
+
+```python
+client = Surmado(timeout=60)
 ```
 
 For `wait_for_report`, the polling timeout is separate:
@@ -244,7 +278,7 @@ Report creation returns HTTP 202 Accepted:
     "status": "queued",
     "brand_slug": "example_brand",
     "brand_name": "Example Brand",
-    "credits_used": 1,
+    "credits_used": 2,
     "created_at": "2025-01-15T10:30:00Z"
 }
 ```
@@ -255,7 +289,7 @@ Completed reports include download URLs (expire in 15 minutes):
 {
     "status": "completed",
     "download_url": "https://storage.googleapis.com/...",      # PDF
-    "pptx_download_url": "https://storage.googleapis.com/...", # PPTX (Pro/Premium)
+    "pptx_download_url": "https://storage.googleapis.com/...", # PPTX
 }
 ```
 
@@ -272,7 +306,6 @@ When using `webhook_url`, your endpoint receives a POST with this structure:
         "token": "SIG-2025-12-3AHGD",
         "product": "signal",
         "status": "completed",
-        "tier": "pro",
         "data_url": "https://api.surmado.com/v1/reports/daSwEVPimdjKStdgx3HS",
         "pdf_url": "https://api.surmado.com/v1/reports/view/C9VUr2VhSQvPG...",
         "credits_refunded": False,
@@ -303,9 +336,8 @@ When using `webhook_url`, your endpoint receives a POST with this structure:
 | `timestamp` | `string` | ISO 8601 when webhook was sent |
 | `report.id` | `string` | Report ID |
 | `report.token` | `string` | Report token (e.g., `SIG-2025-12-3AHGD`) |
-| `report.product` | `string` | `signal`, `scan`, `solutions`, or `monitor` |
+| `report.product` | `string` | `signal`, `scan`, or `solutions` |
 | `report.status` | `string` | `completed` or `failed` |
-| `report.tier` | `string` | `basic`, `pro`, or `premium` |
 | `report.data_url` | `string` | API endpoint to fetch full report |
 | `report.pdf_url` | `string` | Magic link to view PDF (30-day expiry) |
 | `report.credits_refunded` | `bool` | `True` if credits were refunded |
@@ -372,7 +404,13 @@ When using `webhook_url`, your endpoint receives a POST with this structure:
 
 ## Pricing
 
-1 credit = $25. Basic reports cost 1 credit, Pro/Premium cost 2. No subscriptions.
+All reports are $50 each. No subscriptions.
+
+| Product | Price | Credits |
+|---------|-------|---------|
+| Signal | $50 | 2 |
+| Scan | $50 | 2 |
+| Solutions | $50 | 2 |
 
 ## Versioning
 
