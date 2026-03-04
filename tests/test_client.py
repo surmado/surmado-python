@@ -195,7 +195,7 @@ class TestHeaders(unittest.TestCase):
     def test_headers_user_agent_matches_version(self):
         client = Surmado(api_key="sur_test_x")
         headers = client._headers()
-        self.assertIn("0.2.0", headers["User-Agent"])
+        self.assertIn("0.3.0", headers["User-Agent"])
 
     def test_headers_has_three_keys(self):
         client = Surmado(api_key="sur_test_x")
@@ -1342,11 +1342,11 @@ class TestVersion(unittest.TestCase):
     """Test version is accessible and correct."""
 
     def test_version_string(self):
-        self.assertEqual(__version__, "0.2.0")
+        self.assertEqual(__version__, "0.3.0")
 
     def test_version_from_client_module(self):
         from surmado.client import __version__ as client_version
-        self.assertEqual(client_version, "0.2.0")
+        self.assertEqual(client_version, "0.3.0")
 
     def test_version_matches(self):
         from surmado.client import __version__ as client_version
@@ -1766,6 +1766,141 @@ class TestNoTierInAnyPayload(unittest.TestCase):
         mock_post.return_value = {"brand_slug": "t"}
         self.client.ensure_brand(brand_name="T")
         self.assertNotIn("tier", mock_post.call_args[0][1])
+
+
+# =============================================================================
+# Bundle Method
+# =============================================================================
+
+
+class TestBundleMethod(unittest.TestCase):
+    """Test bundle() method sends correct payloads and handles responses."""
+
+    def setUp(self):
+        self.client = Surmado(api_key="sur_test_bundle")
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_required_fields_only(self, mock_post):
+        mock_post.return_value = {
+            "bundle_id": "bnd_abc123",
+            "credits_charged": 3,
+            "credits_remaining": 47,
+            "is_baseline": False,
+            "reports": {
+                "scan": {"report_id": "rpt_scan_1", "status": "queued"},
+                "signal": {"report_id": "rpt_signal_1", "status": "queued"},
+                "solutions": {"report_id": "rpt_sol_1", "status": "waiting_on_signal"},
+            },
+        }
+        result = self.client.bundle(brand_slug="acme_corp", email="test@acme.com")
+        mock_post.assert_called_once_with("/reports/bundle", {
+            "brand_slug": "acme_corp",
+            "email": "test@acme.com",
+        })
+        self.assertEqual(result["bundle_id"], "bnd_abc123")
+        self.assertEqual(result["credits_charged"], 3)
+        self.assertIn("scan", result["reports"])
+        self.assertIn("signal", result["reports"])
+        self.assertIn("solutions", result["reports"])
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_with_optional_fields(self, mock_post):
+        mock_post.return_value = {"bundle_id": "bnd_xyz"}
+        self.client.bundle(
+            brand_slug="acme_corp",
+            email="test@acme.com",
+            persona_slug="cto-enterprise",
+            webhook_url="https://hooks.example.com/done",
+        )
+        mock_post.assert_called_once_with("/reports/bundle", {
+            "brand_slug": "acme_corp",
+            "email": "test@acme.com",
+            "persona_slug": "cto-enterprise",
+            "webhook_url": "https://hooks.example.com/done",
+        })
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_omits_none_optional_fields(self, mock_post):
+        mock_post.return_value = {"bundle_id": "bnd_xyz"}
+        self.client.bundle(brand_slug="acme", email="t@t.com")
+        payload = mock_post.call_args[0][1]
+        self.assertNotIn("persona_slug", payload)
+        self.assertNotIn("webhook_url", payload)
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_no_tier_in_payload(self, mock_post):
+        mock_post.return_value = {"bundle_id": "bnd_xyz"}
+        self.client.bundle(brand_slug="b", email="e@e.com")
+        payload = mock_post.call_args[0][1]
+        self.assertNotIn("tier", payload)
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_baseline_response(self, mock_post):
+        mock_post.return_value = {
+            "bundle_id": "bnd_baseline",
+            "credits_charged": 0,
+            "credits_remaining": 50,
+            "is_baseline": True,
+            "reports": {
+                "scan": {"report_id": "rpt_1", "status": "queued"},
+                "signal": {"report_id": "rpt_2", "status": "queued"},
+                "solutions": {"report_id": "rpt_3", "status": "waiting_on_signal"},
+            },
+        }
+        result = self.client.bundle(brand_slug="new_brand", email="t@t.com")
+        self.assertTrue(result["is_baseline"])
+        self.assertEqual(result["credits_charged"], 0)
+
+    @patch("requests.post")
+    def test_bundle_insufficient_credits_raises(self, mock_post):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 402
+        mock_resp.json.return_value = {
+            "detail": {"error": {"code": "insufficient_credits", "message": "Need 3 credits"}}
+        }
+        mock_resp.text = "{}"
+        mock_post.return_value = mock_resp
+
+        with self.assertRaises(InsufficientCreditsError):
+            self.client.bundle(brand_slug="b", email="e@e.com")
+
+    @patch("requests.post")
+    def test_bundle_brand_not_found_raises(self, mock_post):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 404
+        mock_resp.json.return_value = {
+            "detail": {"error": {"code": "brand_not_found", "message": "Brand not found"}}
+        }
+        mock_resp.text = "{}"
+        mock_post.return_value = mock_resp
+
+        with self.assertRaises(NotFoundError):
+            self.client.bundle(brand_slug="nonexistent", email="e@e.com")
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_posts_to_correct_endpoint(self, mock_post):
+        mock_post.return_value = {"bundle_id": "bnd_xyz"}
+        self.client.bundle(brand_slug="b", email="e@e.com")
+        self.assertEqual(mock_post.call_args[0][0], "/reports/bundle")
+
+    @patch.object(Surmado, "_post")
+    def test_bundle_response_has_all_three_reports(self, mock_post):
+        mock_post.return_value = {
+            "bundle_id": "bnd_xyz",
+            "credits_charged": 3,
+            "credits_remaining": 7,
+            "is_baseline": False,
+            "reports": {
+                "scan": {"report_id": "rpt_s1", "status": "queued"},
+                "signal": {"report_id": "rpt_s2", "status": "queued"},
+                "solutions": {"report_id": "rpt_s3", "status": "waiting_on_signal"},
+            },
+        }
+        result = self.client.bundle(brand_slug="b", email="e@e.com")
+        self.assertEqual(len(result["reports"]), 3)
+        for key in ("scan", "signal", "solutions"):
+            self.assertIn("report_id", result["reports"][key])
+            self.assertIn("status", result["reports"][key])
 
 
 if __name__ == "__main__":
