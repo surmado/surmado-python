@@ -41,15 +41,39 @@ print(f"PDF ready: {completed['download_url']}")
 print("(Save for Surmado Solutions) Report Token: ", completed['token'])
 ```
 
-## Products
+See [examples/](examples/) for runnable scripts.
+
+## Repository Structure
+
+```text
+/client          ← SDK client code (surmado package)
+/examples        ← Runnable usage examples
+/integrations    ← Integration guides (Zapier, Make, n8n, Webhooks)
+README.md        ← You are here
+```
+
+| Directory                      | Contents                                                     |
+| ------------------------------ | ------------------------------------------------------------ |
+| [client/](client/)             | Python package source (`surmado/`), unit tests               |
+| [examples/](examples/)         | Quick start script, ready to run with your API key           |
+| [integrations/](integrations/) | Step-by-step guides for Zapier, Make, n8n, and webhook setup |
+
+## API Surface
+
+### Products
+
+| Method                   | Description                                                      | Credits |
+| ------------------------ | ---------------------------------------------------------------- | ------- |
+| `client.signal(...)`     | AI Visibility report — tests your brand across 7 AI platforms    | 1       |
+| `client.scan(...)`       | Site Audit — comprehensive SEO analysis                          | 1       |
+| `client.solutions(...)`  | Strategy — multi-AI strategic recommendations from 6 agents      | 1       |
+| `client.bundle(...)`     | Full Analysis — all 3 reports in one call                        | 3       |
 
 ### Signal — AI Visibility Testing
 
-Test how your brand appears across 7 AI platforms: ChatGPT, Perplexity, Google Gemini, Claude, Meta AI, Grok, DeepSeek.
-
 ```python
 result = client.signal(
-    url="https://acme.com",
+    website="https://acme.com",
     brand_name="Acme Corp",                              # max 100 chars
     email="you@acme.com",
     industry="B2B SaaS",                                 # max 200 chars
@@ -63,11 +87,9 @@ result = client.signal(
 
 ### Scan — SEO Auditing
 
-Comprehensive technical SEO audits with prioritized recommendations.
-
 ```python
 result = client.scan(
-    url="https://acme.com",
+    website="https://acme.com",
     brand_name="Acme Corp",
     email="you@acme.com",
     competitor_urls=["https://competitor1.com", "https://competitor2.com"]
@@ -76,12 +98,9 @@ result = client.scan(
 
 ### Solutions — Strategic Advisory
 
-Multi-AI strategic recommendations from 6 specialized agents.
-
 **Mode 1: With Signal Token** (recommended)
 
 ```python
-# Run Signal first, then pass the token
 signal_result = client.signal(...)
 solutions_result = client.solutions(
     email="you@acme.com",
@@ -89,7 +108,7 @@ solutions_result = client.solutions(
 )
 ```
 
-**Mode 2: Standalone**
+#### Mode 2: Standalone
 
 ```python
 result = client.solutions(
@@ -103,18 +122,28 @@ result = client.solutions(
 )
 ```
 
-**Mode 3: With Financial Analysis**
+#### Mode 3: With Financial Analysis
 
 ```python
 result = client.solutions(
     email="you@acme.com",
     signal_token=signal_result["token"],
-    include_financial="yes",
+    include_financial=True,
     financial_context="Growing but need to optimize costs",
     monthly_revenue="$50K",
     monthly_costs="$40K",
     cash_available="$200K"
 )
+```
+
+### Bundle — Full Analysis
+
+```python
+result = client.bundle(
+    brand_slug="acme_corp",
+    email="you@acme.com"
+)
+# Creates Scan + Signal + Solutions in one call (3 credits)
 ```
 
 ## Rerun Methods
@@ -136,7 +165,7 @@ result = client.scan_rerun(
 )
 ```
 
-Perfect for Zapier/Make/n8n workflows, scheduled monitoring, and dashboard integrations.
+Perfect for Zapier/Make/n8n workflows, scheduled monitoring, and dashboard integrations. See [integrations/](integrations/) for setup guides.
 
 ## Brand Management
 
@@ -147,7 +176,7 @@ brands = client.list_brands()
 # Create a brand (fails if already exists)
 brand = client.create_brand(
     brand_name="Acme Corp",
-    url="https://acme.com",
+    website="https://acme.com",
     industry="B2B SaaS"
 )
 
@@ -182,6 +211,8 @@ report = client.signal(
 # Your webhook receives POST with full report data when complete
 ```
 
+See [integrations/webhooks.md](integrations/webhooks.md) for payload format and handler examples.
+
 ## Report Data
 
 Access raw report data (metrics, analysis) as JSON:
@@ -195,8 +226,6 @@ data = client.get_report_data("rpt_abc123", fields=["status", "insights"])
 ```
 
 ## Handling Errors
-
-When the API returns a non-success status code, a typed exception is raised:
 
 ```python
 from surmado import (
@@ -229,21 +258,19 @@ except SurmadoError as e:
 
 ### Error Status Mapping
 
-| Status Code | Exception |
-|-------------|-----------|
-| 400 | `ValidationError` |
-| 401 | `AuthenticationError` |
-| 402 | `InsufficientCreditsError` |
-| 404 | `NotFoundError` |
-| 422 | `ValidationError` |
-| 429 | `RateLimitError` |
-| >=500 | `SurmadoError` |
+| Status Code | Exception                  |
+| ----------- | -------------------------- |
+| 400         | `ValidationError`          |
+| 401         | `AuthenticationError`      |
+| 402         | `InsufficientCreditsError` |
+| 404         | `NotFoundError`            |
+| 422         | `ValidationError`          |
+| 429         | `RateLimitError`           |
+| >=500       | `SurmadoError`             |
 
 All exceptions inherit from `SurmadoError` and include `status_code` and `response` attributes.
 
 ## Test Your Key
-
-Verify your API key is valid without consuming credits:
 
 ```python
 result = client.test_auth()
@@ -261,7 +288,6 @@ client = Surmado(timeout=60)
 For `wait_for_report`, the polling timeout is separate:
 
 ```python
-# Wait up to 30 minutes for long reports
 completed = client.wait_for_report(report_id, timeout_minutes=30)
 ```
 
@@ -278,7 +304,7 @@ Report creation returns HTTP 202 Accepted:
     "status": "queued",
     "brand_slug": "example_brand",
     "brand_name": "Example Brand",
-    "credits_used": 2,
+    "credits_used": 1,
     "created_at": "2025-01-15T10:30:00Z"
 }
 ```
@@ -295,122 +321,37 @@ Completed reports include download URLs (expire in 15 minutes):
 
 ## Webhook Payload
 
-When using `webhook_url`, your endpoint receives a POST with this structure:
-
-```python
-{
-    "event": "report.completed",  # or "report.failed"
-    "timestamp": "2025-12-17T20:33:58.737743+00:00",
-    "report": {
-        "id": "daSwEVPimdjKStdgx3HS",
-        "token": "SIG-2025-12-3AHGD",
-        "product": "signal",
-        "status": "completed",
-        "data_url": "https://api.surmado.com/v1/reports/daSwEVPimdjKStdgx3HS",
-        "pdf_url": "https://api.surmado.com/v1/reports/view/C9VUr2VhSQvPG...",
-        "credits_refunded": False,
-        "summary": {
-            "business_name": "Acme Corp",
-            "contact_email": "you@example.com",
-            "industry": "B2B SaaS",
-            "brand_url": "https://acme.com",
-            "location": "San Francisco, CA",
-            "presence_score": 72,
-            "category_share": 18.9,
-            "authority_score": 85,
-            "competitive_rank": 1,
-            "competitive_tier": "Leader",
-            "top_competitor": "Competitor X",
-            "insights_summary": ["..."],
-            "pain_points_summary": ["..."]
-        }
-    }
-}
-```
-
-### Webhook Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `event` | `string` | `report.completed` or `report.failed` |
-| `timestamp` | `string` | ISO 8601 when webhook was sent |
-| `report.id` | `string` | Report ID |
-| `report.token` | `string` | Report token (e.g., `SIG-2025-12-3AHGD`) |
-| `report.product` | `string` | `signal`, `scan`, or `solutions` |
-| `report.status` | `string` | `completed` or `failed` |
-| `report.data_url` | `string` | API endpoint to fetch full report |
-| `report.pdf_url` | `string` | Magic link to view PDF (30-day expiry) |
-| `report.credits_refunded` | `bool` | `True` if credits were refunded |
-| `report.failure_reason` | `string` | Error message (only present when `status=failed`) |
-| `report.summary` | `object` | Curated metrics (fields vary by product) |
-
-### Summary Fields (Signal)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `business_name` | `string` | Brand name |
-| `contact_email` | `string` | Email from request |
-| `industry` | `string` | Industry category |
-| `brand_url` | `string` | Brand website |
-| `location` | `string` | Geographic location |
-| `presence_score` | `number` | AI visibility score (0-100) |
-| `category_share` | `number` | Share of category mentions (%) |
-| `authority_score` | `number` | Brand authority rating (0-100) |
-| `competitive_rank` | `number` | Rank among competitors |
-| `competitive_tier` | `string` | `Leader`, `Challenger`, etc. |
-| `top_competitor` | `string` | Highest-ranked competitor |
-| `insights_summary` | `string[]` | Key insights from analysis |
-| `pain_points_summary` | `string[]` | Customer pain points |
-
-### Summary Fields (Scan)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `business_name` | `string` | Brand name |
-| `contact_email` | `string` | Email from request |
-| `seo_score` | `number` | Overall SEO score (0-100) |
-| `performance_score` | `number` | Page performance score (0-100) |
-| `accessibility_score` | `number` | Accessibility score (0-100) |
-| `total_pages` | `number` | Total pages analyzed |
-| `schema_types_count` | `number` | Number of schema markup types found |
-| `critical_issues_count` | `number` | Count of critical SEO issues |
-| `critical_issues` | `string[]` | List of critical issues found |
-| `content_coverage_percentage` | `number` | Content coverage (%) |
-| `page_analysis_summary` | `string` | Executive summary of page analysis |
-| `link_analysis_summary` | `string` | Executive summary of link analysis |
-| `quick_wins` | `object` | Combined quick wins from analysis |
-
-
+See [integrations/webhooks.md](integrations/webhooks.md) for the full webhook payload reference, including field tables for Signal and Scan summary data.
 
 ## Field Length Limits
 
-| Field | Max Length |
-|-------|------------|
-| brand_name | 100 chars |
-| industry | 200 chars |
-| location | 200 chars |
-| persona | 800 chars |
-| pain_points | 1000 chars |
-| brand_details | 1200 chars |
-| direct_competitors | 500 chars |
-| indirect_competitors | 500 chars |
-| keywords | 500 chars |
-| product | 1000 chars |
-| business_story | 2000 chars |
-| decision | 1500 chars |
-| success | 1000 chars |
-| timeline | 200 chars |
-| scale_indicator | 100 chars |
+| Field                | Max Length |
+| -------------------- | ---------- |
+| brand_name           | 100 chars  |
+| industry             | 200 chars  |
+| location             | 200 chars  |
+| persona              | 800 chars  |
+| pain_points          | 1000 chars |
+| brand_details        | 1200 chars |
+| direct_competitors   | 500 chars  |
+| indirect_competitors | 500 chars  |
+| keywords             | 500 chars  |
+| product              | 1000 chars |
+| business_story       | 2000 chars |
+| decision             | 1500 chars |
+| success              | 1000 chars |
+| timeline             | 200 chars  |
+| scale_indicator      | 100 chars  |
 
 ## Pricing
 
 All reports are $50 each. No subscriptions.
 
-| Product | Price | Credits |
-|---------|-------|---------|
-| Signal | $50 | 2 |
-| Scan | $50 | 2 |
-| Solutions | $50 | 2 |
+| Product   | Price | Credits |
+| --------- | ----- | ------- |
+| Signal    | $50   | 1       |
+| Scan      | $50   | 1       |
+| Solutions | $50   | 1       |
 
 ## Versioning
 
@@ -425,7 +366,9 @@ print(surmado.__version__)
 
 - **Docs:** [help.surmado.com/docs/api-reference](https://help.surmado.com/docs/api-reference/)
 - **API Key:** [surmado.com/login](https://surmado.com/login)
-- **Examples:** [github.com/surmado/surmado-api-public](https://github.com/surmado/surmado-api-public)
+- **Client Source:** [client/](client/)
+- **Examples:** [examples/](examples/)
+- **Integrations:** [integrations/](integrations/)
 - **Issues:** [github.com/surmado/surmado-python/issues](https://github.com/surmado/surmado-python/issues)
 
 ## License
