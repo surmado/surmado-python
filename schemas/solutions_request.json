@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SolutionsRequest",
+  "description": "Request body for POST /reports/solutions - AI-powered strategic advisory. Supports two modes: (1) token mode -- pass signal_token (required) and optionally scan_token; brand is inherited, standalone fields become optional supplemental context. (2) standalone mode -- provide brand and all business context fields directly. scan_token alone does not constitute token mode.",
+  "type": "object",
+  "required": ["email"],
+  "anyOf": [
+    { "required": ["brand_slug"] },
+    { "required": ["brand_name"] },
+    { "required": ["signal_token"] }
+  ],
+  "if": {
+    "not": { "required": ["signal_token"] }
+  },
+  "then": {
+    "description": "Standalone mode: when signal_token is absent, brand and all context fields are required. scan_token may be included for supplemental SEO context.",
+    "anyOf": [
+      { "required": ["brand_slug"] },
+      { "required": ["brand_name"] }
+    ],
+    "required": ["business_story", "decision", "success", "timeline", "scale_indicator"]
+  },
+  "properties": {
+    "brand_slug": {
+      "type": "string",
+      "description": "Existing brand slug (required for standalone mode)"
+    },
+    "brand_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Brand name -- auto-creates brand_slug if not provided (required for standalone mode)"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email for notifications"
+    },
+    "signal_token": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Token from a completed Signal report (e.g. SIG-2025-11-XXXXX). When provided, brand is inherited and standalone fields become optional supplemental context."
+    },
+    "scan_token": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Token from a completed Scan report (e.g. SCN-2025-11-XXXXX). Feeds SEO/technical context into the analysis."
+    },
+    "business_story": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Tell us about your business (required for standalone mode)"
+    },
+    "decision": {
+      "type": "string",
+      "maxLength": 1500,
+      "description": "Key decision or challenge you're facing (required for standalone mode)"
+    },
+    "success": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "What does success look like? (required for standalone mode)"
+    },
+    "timeline": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Timeline for decision (required for standalone mode)"
+    },
+    "scale_indicator": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Business scale indicator, e.g. regional (required for standalone mode)"
+    },
+    "webhook_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to receive completion webhook (HTTPS required)"
+    },
+    "is_agency_white_label": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable white-label mode for agencies"
+    },
+    "agency_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Agency name for white-label outputs"
+    }
+  }
+}

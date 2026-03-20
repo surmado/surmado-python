@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ErrorResponse",
+  "description": "Error response format for API errors (4xx and 5xx). Error shapes vary across endpoints -- always check for a detail field and read error and message defensively.",
+  "type": "object",
+  "required": ["detail"],
+  "properties": {
+    "detail": {
+      "type": "object",
+      "description": "Error detail object. Structure varies by endpoint.",
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "description": "Error identifier. May be a string code or a nested object with code and message.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Error code string (e.g. INSUFFICIENT_CREDITS, brand_not_found)"
+            },
+            {
+              "type": "object",
+              "required": ["code", "message"],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "Machine-readable error code"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Human-readable error message"
+                }
+              }
+            }
+          ]
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message (present when error is a string)"
+        },
+        "have": {
+          "type": "integer",
+          "description": "Credits available (insufficient credits errors)"
+        },
+        "need": {
+          "type": "integer",
+          "description": "Credits required (insufficient credits errors)"
+        },
+        "brand_slug": {
+          "type": "string",
+          "description": "Brand slug (brand not found errors)"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "detail": {
+        "error": "INSUFFICIENT_CREDITS",
+        "have": 0,
+        "need": 1,
+        "message": "Requires 1 credit but only 0 available."
+      }
+    },
+    {
+      "detail": {
+        "error": "brand_not_found",
+        "brand_slug": "nonexistent_brand"
+      }
+    },
+    {
+      "detail": {
+        "error": {
+          "code": "brand_reference_missing",
+          "message": "Either brand_slug or brand_name must be provided"
+        }
+      }
+    }
+  ]
+}

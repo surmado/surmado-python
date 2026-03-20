@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReportCreationResponse",
+  "description": "Response from creating a Scan, Signal, or Solutions report (HTTP 202 Accepted)",
+  "type": "object",
+  "required": [
+    "report_id",
+    "org_id",
+    "product",
+    "status",
+    "brand_slug",
+    "brand_name",
+    "credits_used",
+    "created_at"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "Unique report identifier",
+      "pattern": "^rpt_[a-zA-Z0-9]+$"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "product": {
+      "type": "string",
+      "enum": ["scan", "signal", "solutions"],
+      "description": "Product type"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued"],
+      "description": "Initial status is always 'queued'"
+    },
+    "brand_slug": {
+      "type": "string",
+      "description": "URL-safe brand identifier"
+    },
+    "brand_name": {
+      "type": "string",
+      "description": "Display name of the brand"
+    },
+    "brand_created": {
+      "type": "boolean",
+      "description": "True if brand was auto-created from brand_name"
+    },
+    "credits_used": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Credits consumed for this report (1 credit per report)"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Idempotency request identifier. Pass as query parameter on creation to make retries safe."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of report creation"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last update"
+    },
+    "white_label": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "agency_name": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "tier_features": {
+      "type": "object",
+      "properties": {
+        "has_pptx": {
+          "type": "boolean",
+          "description": "Whether PPTX output is included"
+        },
+        "has_enhanced_analysis": {
+          "type": "boolean",
+          "description": "Whether enhanced insights are included"
+        },
+        "persona_variations": {
+          "type": "integer",
+          "description": "Number of persona variations"
+        }
+      }
+    },
+    "note": {
+      "type": ["string", "null"],
+      "description": "Educational message (e.g. brand_slug created - prevents duplicates from name variations)"
+    }
+  }
+}

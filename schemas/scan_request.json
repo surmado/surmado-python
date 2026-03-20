@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ScanRequest",
+  "description": "Request body for POST /reports/scan - SEO audit",
+  "type": "object",
+  "required": ["url", "email"],
+  "anyOf": [
+    { "required": ["brand_slug"] },
+    { "required": ["brand_name"] }
+  ],
+  "properties": {
+    "brand_slug": {
+      "type": "string",
+      "description": "Existing brand slug (use this if you already created the brand)"
+    },
+    "brand_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Brand name (we'll auto-create brand_slug if not provided)"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Website URL to audit"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email for notifications"
+    },
+    "report_style": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "executive",
+      "description": "Report style (e.g., executive, technical, comprehensive)"
+    },
+    "competitor_urls": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "description": "Competitor URLs to compare against"
+    },
+    "webhook_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to receive completion webhook (HTTPS required)"
+    },
+    "is_agency_white_label": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable white-label mode for agencies"
+    },
+    "agency_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Agency name for white-label outputs"
+    }
+  }
+}
+

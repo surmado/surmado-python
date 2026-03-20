@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReportStatusResponse",
+  "description": "Response from GET /reports/{report_id} - includes full report details",
+  "type": "object",
+  "required": [
+    "report_id",
+    "org_id",
+    "product",
+    "status",
+    "brand_slug",
+    "brand_name",
+    "created_at"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "Unique report identifier"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "product": {
+      "type": "string",
+      "enum": ["scan", "signal", "solutions"],
+      "description": "Product type"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "processing", "completed", "failed", "cancelled", "waiting_on_signal", "waiting_on_scan", "waiting_on_dependencies"],
+      "description": "Current report status. Treat any status other than completed, failed, or cancelled as still in progress."
+    },
+    "brand_slug": {
+      "type": "string",
+      "description": "URL-safe brand identifier"
+    },
+    "brand_name": {
+      "type": "string",
+      "description": "Display name of the brand"
+    },
+    "token": {
+      "type": ["string", "null"],
+      "description": "Report token (e.g. SIG-2025-11-A1B2C, SCN-..., SOL-...). Populated on completion, null while queued or processing. Use as signal_token or scan_token when creating Strategy reports."
+    },
+    "credits_used": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Credits consumed for this report (1 credit per report)"
+    },
+    "credits_refunded": {
+      "type": "boolean",
+      "description": "True if credits were refunded due to failure"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Idempotency request identifier"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of report creation"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of last update"
+    },
+    "completed_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of completion"
+    },
+    "processing_time_seconds": {
+      "type": ["number", "null"],
+      "description": "Processing time in seconds"
+    },
+    "download_url": {
+      "type": ["string", "null"],
+      "description": "Signed HTTPS URL for PDF download (expires in ~15 minutes)"
+    },
+    "pptx_download_url": {
+      "type": ["string", "null"],
+      "description": "Signed HTTPS URL for PPTX download (expires in ~15 minutes, when available)"
+    },
+    "public_intelligence": {
+      "type": ["object", "null"],
+      "description": "Structured report data for automation workflows. When present, contains parsed report data you can route into other systems without downloading files."
+    },
+    "webhook_url": {
+      "type": ["string", "null"],
+      "description": "Webhook URL for completion notifications"
+    },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Human-readable error message (if failed)"
+    },
+    "error_code": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "VALIDATION_FAILED",
+        "BRAND_NOT_FOUND",
+        "CREDITS_INSUFFICIENT",
+        "IDEMPOTENT_REPLAY",
+        "PROVIDER_TIMEOUT",
+        "GENERATION_FAILED",
+        "STORAGE_FAILED",
+        "INTERNAL_ERROR"
+      ],
+      "description": "Machine-readable error code"
+    },
+    "error_details": {
+      "type": ["object", "null"],
+      "description": "Structured error metadata"
+    },
+    "white_label": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "agency_name": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "tier_features": {
+      "type": "object",
+      "properties": {
+        "has_pptx": {
+          "type": "boolean"
+        },
+        "has_enhanced_analysis": {
+          "type": "boolean"
+        },
+        "persona_variations": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
