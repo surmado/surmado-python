@@ -1203,22 +1203,22 @@ class TestCreateBrandMethod(unittest.TestCase):
         self.client.create_brand(brand_name="Acme Corp")
         payload = mock_post.call_args[0][1]
         self.assertEqual(payload["brand_name"], "Acme Corp")
-        self.assertNotIn("url", payload)
+        self.assertNotIn("website", payload)
         self.assertNotIn("industry", payload)
 
     @patch.object(Surmado, "_post")
-    def test_create_brand_with_url(self, mock_post):
+    def test_create_brand_with_website(self, mock_post):
         mock_post.return_value = {"brand_slug": "acme"}
-        self.client.create_brand(brand_name="Acme Corp", url="acme.com")
+        self.client.create_brand(brand_name="Acme Corp", website="acme.com")
         payload = mock_post.call_args[0][1]
-        self.assertEqual(payload["url"], "https://acme.com")
+        self.assertEqual(payload["website"], "https://acme.com")
 
     @patch.object(Surmado, "_post")
-    def test_create_brand_url_normalization(self, mock_post):
+    def test_create_brand_website_normalization(self, mock_post):
         mock_post.return_value = {"brand_slug": "acme"}
-        self.client.create_brand(brand_name="Acme", url="https://acme.com")
+        self.client.create_brand(brand_name="Acme", website="https://acme.com")
         payload = mock_post.call_args[0][1]
-        self.assertEqual(payload["url"], "https://acme.com")
+        self.assertEqual(payload["website"], "https://acme.com")
 
     @patch.object(Surmado, "_post")
     def test_create_brand_with_industry(self, mock_post):
@@ -1230,10 +1230,10 @@ class TestCreateBrandMethod(unittest.TestCase):
     @patch.object(Surmado, "_post")
     def test_create_brand_with_all_fields(self, mock_post):
         mock_post.return_value = {"brand_slug": "acme"}
-        self.client.create_brand(brand_name="Acme", url="acme.com", industry="Tech")
+        self.client.create_brand(brand_name="Acme", website="acme.com", industry="Tech")
         payload = mock_post.call_args[0][1]
         self.assertEqual(payload["brand_name"], "Acme")
-        self.assertEqual(payload["url"], "https://acme.com")
+        self.assertEqual(payload["website"], "https://acme.com")
         self.assertEqual(payload["industry"], "Tech")
 
     @patch.object(Surmado, "_post")
@@ -1252,11 +1252,11 @@ class TestCreateBrandMethod(unittest.TestCase):
         self.assertEqual(endpoint, "/brands")
 
     @patch.object(Surmado, "_post")
-    def test_create_brand_none_url_not_included(self, mock_post):
+    def test_create_brand_none_website_not_included(self, mock_post):
         mock_post.return_value = {"brand_slug": "acme"}
-        self.client.create_brand(brand_name="Acme", url=None)
+        self.client.create_brand(brand_name="Acme", website=None)
         payload = mock_post.call_args[0][1]
-        self.assertNotIn("url", payload)
+        self.assertNotIn("website", payload)
 
     @patch.object(Surmado, "_post")
     def test_create_brand_none_industry_not_included(self, mock_post):
@@ -1287,11 +1287,11 @@ class TestEnsureBrandMethod(unittest.TestCase):
         self.assertEqual(endpoint, "/brands/ensure")
 
     @patch.object(Surmado, "_post")
-    def test_ensure_brand_with_url(self, mock_post):
+    def test_ensure_brand_with_website(self, mock_post):
         mock_post.return_value = {"brand_slug": "acme"}
-        self.client.ensure_brand(brand_name="Acme", url="acme.com")
+        self.client.ensure_brand(brand_name="Acme", website="acme.com")
         payload = mock_post.call_args[0][1]
-        self.assertEqual(payload["url"], "https://acme.com")
+        self.assertEqual(payload["website"], "https://acme.com")
 
     @patch.object(Surmado, "_post")
     def test_ensure_brand_with_industry(self, mock_post):
@@ -1577,7 +1577,7 @@ class TestEndToEndBrands(unittest.TestCase):
         mock_post.return_value = mock_resp
 
         client = Surmado(api_key="sur_test_key")
-        result = client.create_brand(brand_name="Acme Corp", url="acme.com", industry="SaaS")
+        result = client.create_brand(brand_name="Acme Corp", website="acme.com", industry="SaaS")
         self.assertEqual(result["brand_slug"], "acme_corp")
 
     @patch("requests.post")
@@ -1671,14 +1671,14 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(payload["url"], "http://internal.example.com")
 
     @patch.object(Surmado, "_post")
-    def test_create_brand_empty_url_string(self, mock_post):
-        """Empty string url should not be included (falsy)."""
+    def test_create_brand_empty_website_string(self, mock_post):
+        """Empty string website should not be included (falsy)."""
         mock_post.return_value = {"brand_slug": "test"}
         client = Surmado(api_key="sur_test_x")
-        client.create_brand(brand_name="Test", url="")
+        client.create_brand(brand_name="Test", website="")
         payload = mock_post.call_args[0][1]
-        # Empty string is falsy, so url should not be added
-        self.assertNotIn("url", payload)
+        # Empty string is falsy, so website should not be added
+        self.assertNotIn("website", payload)
 
     @patch.object(Surmado, "_post")
     def test_create_brand_empty_industry_string(self, mock_post):

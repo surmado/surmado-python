@@ -15,7 +15,7 @@ __version__ = "0.3.0"
 class SurmadoError(Exception):
     """Base exception for Surmado SDK errors."""
 
-    def __init__(self, message: str, status_code: int = None, response: dict = None):
+    def __init__(self, message: str, status_code: Optional[int] = None, response: Optional[dict] = None):
         super().__init__(message)
         self.status_code = status_code
         self.response = response
@@ -81,8 +81,8 @@ class Surmado:
 
     def __init__(
         self,
-        api_key: str = None,
-        base_url: str = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         timeout: int = 30
     ):
         self.api_key = api_key or os.getenv("SURMADO_API_KEY")
@@ -215,14 +215,14 @@ class Surmado:
     def solutions(
         self,
         email: str,
-        signal_token: str = None,
-        scan_token: str = None,
-        brand_name: str = None,
-        business_story: str = None,
-        decision: str = None,
-        success: str = None,
-        timeline: str = None,
-        scale_indicator: str = None,
+        signal_token: Optional[str] = None,
+        scan_token: Optional[str] = None,
+        brand_name: Optional[str] = None,
+        business_story: Optional[str] = None,
+        decision: Optional[str] = None,
+        success: Optional[str] = None,
+        timeline: Optional[str] = None,
+        scale_indicator: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -248,7 +248,7 @@ class Surmado:
             scale_indicator: Business scale indicator (max 100 chars, required for Mode 2)
 
         Optional kwargs (for financial analysis):
-            include_financial: "yes" or "no" to include financial analysis
+            include_financial: True to include financial analysis
             financial_context: Financial situation description (max 1000 chars)
             monthly_revenue: Monthly revenue (max 50 chars)
             monthly_costs: Monthly costs (max 50 chars)
@@ -314,8 +314,8 @@ class Surmado:
         self,
         brand_slug: str,
         email: str,
-        persona_slug: str = None,
-        webhook_url: str = None,
+        persona_slug: Optional[str] = None,
+        webhook_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Run a Full Analysis Bundle (Site Audit + AI Visibility + Strategy).
@@ -493,7 +493,7 @@ class Surmado:
     def get_report_data(
         self,
         report_id: str,
-        fields: List[str] = None
+        fields: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Get raw report data with optional field filtering.
@@ -612,8 +612,8 @@ class Surmado:
     def create_brand(
         self,
         brand_name: str,
-        url: str = None,
-        industry: str = None,
+        website: Optional[str] = None,
+        industry: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -621,7 +621,7 @@ class Surmado:
 
         Args:
             brand_name: Brand name (max 100 chars, required)
-            url: Brand website URL
+            website: Brand website URL
             industry: Industry/sector (max 200 chars)
 
         Returns:
@@ -633,14 +633,14 @@ class Surmado:
         Example:
             >>> brand = client.create_brand(
             ...     brand_name="Acme Corp",
-            ...     url="https://acme.com",
+            ...     website="https://acme.com",
             ...     industry="B2B SaaS"
             ... )
             >>> print(f"Created: {brand['brand_slug']}")
         """
         payload = {"brand_name": brand_name, **kwargs}
-        if url:
-            payload["url"] = self._normalize_url(url)
+        if website:
+            payload["website"] = self._normalize_url(website)
         if industry:
             payload["industry"] = industry
         return self._post("/brands", payload)
@@ -648,8 +648,8 @@ class Surmado:
     def ensure_brand(
         self,
         brand_name: str,
-        url: str = None,
-        industry: str = None,
+        website: Optional[str] = None,
+        industry: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -659,7 +659,7 @@ class Surmado:
 
         Args:
             brand_name: Brand name (max 100 chars, required)
-            url: Brand website URL
+            website: Brand website URL
             industry: Industry/sector (max 200 chars)
 
         Returns:
@@ -668,13 +668,13 @@ class Surmado:
         Example:
             >>> brand = client.ensure_brand(
             ...     brand_name="Acme Corp",
-            ...     url="https://acme.com"
+            ...     website="https://acme.com"
             ... )
             >>> print(f"Slug: {brand['brand_slug']}")
         """
         payload = {"brand_name": brand_name, **kwargs}
-        if url:
-            payload["url"] = self._normalize_url(url)
+        if website:
+            payload["website"] = self._normalize_url(website)
         if industry:
             payload["industry"] = industry
         return self._post("/brands/ensure", payload)

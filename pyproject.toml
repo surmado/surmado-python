@@ -51,11 +51,11 @@ Changelog = "https://github.com/surmado/surmado-python/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/surmado",
+    "/client/surmado",
     "/README.md",
     "/LICENSE",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["surmado"]
+packages = ["client/surmado"]
 
