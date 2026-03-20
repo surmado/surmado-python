@@ -195,7 +195,7 @@ class TestHeaders(unittest.TestCase):
     def test_headers_user_agent_matches_version(self):
         client = Surmado(api_key="sur_test_x")
         headers = client._headers()
-        self.assertIn("0.3.0", headers["User-Agent"])
+        self.assertIn("0.3.1", headers["User-Agent"])
 
     def test_headers_has_three_keys(self):
         client = Surmado(api_key="sur_test_x")
@@ -1342,11 +1342,11 @@ class TestVersion(unittest.TestCase):
     """Test version is accessible and correct."""
 
     def test_version_string(self):
-        self.assertEqual(__version__, "0.3.0")
+        self.assertEqual(__version__, "0.3.1")
 
     def test_version_from_client_module(self):
         from surmado.client import __version__ as client_version
-        self.assertEqual(client_version, "0.3.0")
+        self.assertEqual(client_version, "0.3.1")
 
     def test_version_matches(self):
         from surmado.client import __version__ as client_version

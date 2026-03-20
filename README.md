@@ -1,5 +1,6 @@
 # Surmado Python SDK
 
+[![CI](https://github.com/surmado/surmado-python/actions/workflows/ci.yml/badge.svg)](https://github.com/surmado/surmado-python/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/surmado.svg)](https://pypi.org/project/surmado/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
@@ -73,7 +74,7 @@ README.md        ← You are here
 
 ```python
 result = client.signal(
-    website="https://acme.com",
+    url="https://acme.com",
     brand_name="Acme Corp",                              # max 100 chars
     email="you@acme.com",
     industry="B2B SaaS",                                 # max 200 chars
@@ -89,7 +90,7 @@ result = client.signal(
 
 ```python
 result = client.scan(
-    website="https://acme.com",
+    url="https://acme.com",
     brand_name="Acme Corp",
     email="you@acme.com",
     competitor_urls=["https://competitor1.com", "https://competitor2.com"]
@@ -183,7 +184,7 @@ brand = client.create_brand(
 # Create or get existing brand (never fails with conflict)
 brand = client.ensure_brand(
     brand_name="Acme Corp",
-    url="https://acme.com"
+    website="https://acme.com"
 )
 ```
 

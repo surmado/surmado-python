@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SignalRequest",
+  "description": "Request body for POST /reports/signal - AI visibility testing",
+  "type": "object",
+  "required": ["url", "email", "industry", "location", "persona", "pain_points", "brand_details", "direct_competitors"],
+  "anyOf": [
+    { "required": ["brand_slug"] },
+    { "required": ["brand_name"] }
+  ],
+  "properties": {
+    "brand_slug": {
+      "type": "string",
+      "description": "Existing brand slug (use this if you already created the brand)"
+    },
+    "brand_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Brand name (we'll auto-create brand_slug if not provided)"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Your website URL"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email for notifications"
+    },
+    "industry": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Your industry or sector"
+    },
+    "business_scale": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "medium",
+      "description": "Business scale (e.g., small, medium, large, national, enterprise)"
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Primary market location"
+    },
+    "product": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Product or service description"
+    },
+    "persona": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "Target customer persona"
+    },
+    "pain_points": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Problems your solution addresses (MUST be a string, not an array)"
+    },
+    "brand_details": {
+      "type": "string",
+      "maxLength": 1200,
+      "description": "Brand positioning and unique value"
+    },
+    "direct_competitors": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Direct competitors (comma-separated string, NOT an array)"
+    },
+    "indirect_competitors": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Indirect competitors (comma-separated string)"
+    },
+    "keywords": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Keywords to analyze (comma-separated string)"
+    },
+    "generate_pptx": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate PowerPoint presentation"
+    },
+    "webhook_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to receive completion webhook (HTTPS required)"
+    },
+    "is_agency_white_label": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable white-label mode for agencies"
+    },
+    "agency_name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Agency name for white-label outputs"
+    }
+  }
+}
+
