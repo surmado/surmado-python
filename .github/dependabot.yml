@@ -7,6 +7,9 @@ updates:
       day: "monday"
     # NOTE: uv does not support dependency-type (prod/dev split) yet.
     # See https://github.com/dependabot/dependabot-core/issues/13202
+    # surpy: see README "Known limitations".
+    ignore:
+      - dependency-name: "surpy"
     groups:
       minor-and-patch:
         patterns: ["*"]
