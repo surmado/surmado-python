@@ -1,4 +1,11 @@
 version: 2
+# surpy's private index: see README "Known limitations".
+registries:
+  surpy:
+    type: python-index
+    url: https://us-central1-python.pkg.dev/surmado/surpy/simple/
+    workload-identity-provider: projects/786881952931/locations/global/workloadIdentityPools/github/providers/github
+    service-account: dependabot-surpy-reader@surmado.iam.gserviceaccount.com
 updates:
   - package-ecosystem: "uv"
     directory: "/"
@@ -8,6 +15,8 @@ updates:
     # NOTE: uv does not support dependency-type (prod/dev split) yet.
     # See https://github.com/dependabot/dependabot-core/issues/13202
     # surpy: see README "Known limitations".
+    registries:
+      - surpy
     ignore:
       - dependency-name: "surpy"
     groups:
