@@ -19,6 +19,9 @@ updates:
       - surpy
     ignore:
       - dependency-name: "surpy"
+      # A stripe major is a planned migration, not a bump: v15 drops StripeObject's dict behaviour, which dict-fed tests can't catch.
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         patterns: ["*"]
