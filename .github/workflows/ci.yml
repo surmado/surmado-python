@@ -10,6 +10,10 @@ on:
     branches: [main]
 
 jobs:
+  workflow-yaml:
+    name: Workflow YAML
+    uses: surmado/.github/.github/workflows/workflow-yaml-format.yml@main
+
   test:
     runs-on: ubuntu-latest
     strategy:
