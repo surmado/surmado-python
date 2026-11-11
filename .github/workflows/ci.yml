@@ -8,9 +8,17 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    # ready_for_review: a draft's run skips every job, so marking the PR ready is what starts the real run.
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Cancel a PR's in-flight run when a newer push supersedes it. Any other event keys on run_id, so it never shares a group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     strategy:
       matrix:
